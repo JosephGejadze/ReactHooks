@@ -118,22 +118,21 @@ export const App3 = () => {
     setNames((x)=>[...x, ''])
   }, []);
 
-  const handleDelete = (i: number): void => {
-    let newNames = [...names];
-    newNames.splice(i, 1);
-    setNames(newNames);
-  };
+  const handleDelete = useCallback((index: number): void => {
+    setNames((x)=>[...x].filter((e, i)=> index !== i));
+  }, []);
 
   const handleChange = useCallback((i: number, newName: string):void => {
-    let newNames = [...names];
-    newNames[i] = newName;
-    setNames(newNames);
-  }, [names]);
-
+    setNames((x)=>{
+      let newNames = [...x];
+      newNames[i] = newName;
+      return newNames;
+    });
+    }, []);
 
   return(
     <div>
-      {names.map((name, index) => <App3Child name={name} index={index} /*onDelete={handleDelete} onChange={handleChange}*/ />)}
+      {names.map((name, index) => <App3Child name={name} index={index} onDelete={handleDelete} onChange={handleChange} />)}
       <button onClick={handleAdd}>Add</button>
     </div>
   )
@@ -142,16 +141,16 @@ export const App3 = () => {
 interface ChildProps {
   name: string;
   index: number;
-  // onDelete: (index: number) => void;
-  // onChange: (index: number, newName: string) => void;
+  onDelete: (index: number) => void;
+  onChange: (index: number, newName: string) => void;
 }
 
 const App3Child = React.memo((props: ChildProps) => { 
   console.log('render');
   return (
     <div>
-      <input value = {props.name} /*onChange={(e)=>{props.onChange(props.index, e.target.value)}}*/ />
-      <button /*onClick={()=>{props.onDelete(props.index)}}*/>Delete</button>
+      <input value = {props.name} onChange={(e)=>{props.onChange(props.index, e.target.value)}} />
+      <button onClick={()=>{props.onDelete(props.index)}}>Delete</button>
     </div>
   );
 });
