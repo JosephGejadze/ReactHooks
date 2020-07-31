@@ -1,12 +1,12 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import {App1, App2} from './App';
+import {App1, App2, App3} from './App';
 import * as serviceWorker from './serviceWorker';
 
 ReactDOM.render(
   <React.StrictMode>
-    <App2 />
+    <App3 />
   </React.StrictMode>,
   document.getElementById('root')
 );

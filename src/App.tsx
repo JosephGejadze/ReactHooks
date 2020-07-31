@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from 'react';
+import React, {useState, useEffect, useCallback} from 'react';
 import './App.css';
 
 // Display two buttons for incrementing and decrementing and value. 
@@ -8,8 +8,8 @@ import './App.css';
 export const App1 = () => {
   
   const [count, setCount] = useState(0);
-  const decrement = () => {setCount(count-1)};
-  const increment = () => {setCount(count+1)};
+  const decrement = useCallback(()=>{setCount( x => x-1 )}, []);
+  const increment = useCallback(()=>{setCount( x => x+1 )}, []);
 
   return (
       <App1Display count={count} decrement={decrement} increment={increment}/>
@@ -55,34 +55,103 @@ const fetchData = (): Promise<string> => {
 }
 
 export const App2 = () => {
-  const [display, setDisplay] = useState(<h1>Loading...</h1>);
-  const [mounted, setMounted] = useState(false);
+  const [status, setStatus] = useState("pending");
+  let successMessage: string = '';
 
   const fetch = () => {
-    fetchData().
-      then((value)=>{
-        setDisplay(<div><h1>Success... {value}</h1></div>);
+    fetchData()
+      .then((value)=>{
+        successMessage = value;
+        setStatus("success");
       })
       .catch((value)=>{
-        setDisplay(
-        <div>
-          <h1>failure...</h1>
-          <button onClick={handleClick}>Try again</button>
-        </div>);
-        
+        setStatus("failure");
       })
   }
 
-  useEffect(()=>{  
-    setMounted(true);
-    if(!mounted) fetch();
-    console.log("effect used");
-  });
+  useEffect(fetch, []);
 
   const handleClick = () => {
-    setDisplay(<h1>Loading...</h1>)
+    setStatus("pending");
     fetch();
   }
 
-  return display;
+  switch(status){
+    case "success":
+      return <div><h1>Success... {successMessage}</h1></div>;
+    case "failure":
+      return (
+        <div>
+          <h1>failure...</h1>
+          <button onClick={handleClick}>Try again</button>
+        </div>
+      );
+    default: 
+      return <h1>Loading...</h1>;
+  }  
 }
+
+// 🔹 Create a parent component and in it's state store array of names (strings). Initial value - ["First", "Second"]
+// 🔹 Create a child component with the following props
+
+/*
+    interface ChildProps {
+        name: string;
+        index: number;
+        onChange: (index: number, newName: string) => void;
+        onDelete: (index: number) => void;
+    }
+*/
+// 🔹 Parent component should render child comomponents (each child component responsible for rendering one name) 
+//    and a button, which, when clicked, will add new name at the end. It should pass required props to child components 
+//    and the passed functions must behave as their names suggest.
+// 🔹 Child component should render controllable input with explicit value passed from parent. 
+//    Changing input value must call onChange function (received from props) with appropriate arguments. 
+//    Render button for deleting too.
+// 🔹 Make sure that changing value of single name rerenders only parent and corresponding child component
+
+
+export const App3 = () => {
+  const [names, setNames] = useState(["First", "Second"]);
+  
+  const handleAdd = useCallback(():void => {
+    setNames((x)=>[...x, ''])
+  }, []);
+
+  const handleDelete = (i: number): void => {
+    let newNames = [...names];
+    newNames.splice(i, 1);
+    setNames(newNames);
+  };
+
+  const handleChange = useCallback((i: number, newName: string):void => {
+    let newNames = [...names];
+    newNames[i] = newName;
+    setNames(newNames);
+  }, [names]);
+
+
+  return(
+    <div>
+      {names.map((name, index) => <App3Child name={name} index={index} /*onDelete={handleDelete} onChange={handleChange}*/ />)}
+      <button onClick={handleAdd}>Add</button>
+    </div>
+  )
+};
+
+interface ChildProps {
+  name: string;
+  index: number;
+  // onDelete: (index: number) => void;
+  // onChange: (index: number, newName: string) => void;
+}
+
+const App3Child = React.memo((props: ChildProps) => { 
+  console.log('render');
+  return (
+    <div>
+      <input value = {props.name} /*onChange={(e)=>{props.onChange(props.index, e.target.value)}}*/ />
+      <button /*onClick={()=>{props.onDelete(props.index)}}*/>Delete</button>
+    </div>
+  );
+});
