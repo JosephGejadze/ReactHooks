@@ -1,4 +1,4 @@
-import React, {useState, useEffect, useCallback} from 'react';
+import React, {useState, useEffect, useCallback, useMemo} from 'react';
 import './App.css';
 
 // Display two buttons for incrementing and decrementing and value. 
@@ -119,7 +119,7 @@ export const App3 = () => {
   }, []);
 
   const handleDelete = useCallback((index: number): void => {
-    setNames((x)=>[...x].filter((e, i)=> index !== i));
+    setNames((x)=>x.filter((e, i)=> index !== i));
   }, []);
 
   const handleChange = useCallback((i: number, newName: string):void => {
@@ -131,26 +131,94 @@ export const App3 = () => {
     }, []);
 
   return(
-    <div>
-      {names.map((name, index) => <App3Child name={name} index={index} onDelete={handleDelete} onChange={handleChange} />)}
-      <button onClick={handleAdd}>Add</button>
-    </div>
-  )
+      <div>
+          {names.map((name, index) => <App3Child name={name} index={index} key={index} onDelete={handleDelete} onChange={handleChange} />)}
+          <button onClick={handleAdd}>Add</button>
+      </div>
+  );
 };
 
-interface ChildProps {
+interface App3ChildProps {
   name: string;
   index: number;
   onDelete: (index: number) => void;
   onChange: (index: number, newName: string) => void;
 }
 
-const App3Child = React.memo((props: ChildProps) => { 
+const App3Child = React.memo((props: App3ChildProps) => { 
   console.log('render');
   return (
     <div>
       <input value = {props.name} onChange={(e)=>{props.onChange(props.index, e.target.value)}} />
       <button onClick={()=>{props.onDelete(props.index)}}>Delete</button>
+    </div>
+  );
+});
+
+
+// 🔹 The problem is same as previous, except:
+// 🔹 the props of child component. The new type should be
+/*  
+    interface ChildProps {
+        name: string;
+        onChange: (newName: string) => void;
+        onDelete: () => void;
+    }
+*/
+// 🔹 Try achieving desired results without considreng optimization of rerendering only appropriate components.
+// 🔹 Finally, try achieving desired result with optimizing rerendering as described in MNA.1.
+
+
+export const App4 = () => {
+  const [names, setNames] = useState(["First", "Second"]);
+  
+  const handleAdd = ():void => {
+    deletes[deletes.length] = handleDelete(deletes.length);
+    changes[changes.length] = handleChange(changes.length);
+    setNames((x)=>[...x, ''])
+  };
+
+  const handleDelete = (index: number) => {
+    return ()=>{
+      setNames((x)=>x.filter((e, i) => index !== i));
+    }
+  };
+  
+  const handleChange = (index: number) => {
+    return (newName: string) => {
+      setNames((x)=>{
+        let newNames = [...x];
+        newNames[index] = newName;
+        return newNames;
+      });
+    }
+  };
+
+  const [deletes, setDeletes] = useState([handleDelete(0), handleDelete(1)]);
+  const [changes, setChanges] = useState([handleChange(0), handleChange(1)]);
+  
+  return(
+    <div>
+      {names.map((name, index) => 
+      <App4Child key={index} name={name} onDelete={deletes[index]} onChange={changes[index]} />
+      )}
+      <button onClick={handleAdd}>Add</button>
+    </div>
+  )
+};
+
+interface App4ChildProps {
+  name: string;
+  onDelete: () => void;
+  onChange: (newName: string) => void;
+};
+
+const App4Child = React.memo((props: App4ChildProps) => { 
+  console.log("render");
+  return (
+    <div>
+      <input value = {props.name} onChange={(e)=>{props.onChange(e.target.value)}} />
+      <button onClick={props.onDelete}>Delete</button>
     </div>
   );
 });
